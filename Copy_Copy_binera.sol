@@ -1,3 +1,5 @@
+// New transfer mechinism for buy and sell fees, and whitelist function
+
 // SPDX-License-Identifier: MIT
 
 /*
