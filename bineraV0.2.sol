@@ -15,7 +15,7 @@ Are You ready to the moon?
 x100000000000000
 */
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
