@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 
 /*
-Welcome to Binera.
 
-Telegram: https://t.me/Binera/
-Twitter: https://twitter.com/Binera/
-Website: https://Binera.io
-95% of tokens - LOCKED at TrustSwap!
-Only 5% for presale on PancakeSwap.
-All liquidity Tokens burned!
-Are You ready to the moon?
-x100000000000000
+██████╗░ ██╗ ███╗░░██╗ ███████╗ ░█████╗░
+██╔══██╗ ██║ ████╗░██║ ██╔════╝ ██╔══██╗
+██████╦╝ ██║ ██╔██╗██║ █████╗░░ ███████║
+██╔══██╗ ██║ ██║╚████║ ██╔══╝░░ ██╔══██║
+██████╦╝ ██║ ██║░╚███║ ███████╗ ██║░░██║
+╚═════╝░ ╚═╝ ╚═╝░░╚══╝ ╚══════╝ ╚═╝░░╚═╝
+
+Telegram: https://t.me/BineraEN/
+Twitter: https://twitter.com/BineraEN/
+Website: https://Binera.finance/
 */
 
 pragma solidity 0.8.19;
