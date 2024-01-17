@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.7.0;
 
-interface IUniswapV2Router02 {
-    function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);
-    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);
-    function WETH() external pure returns (address);
-}
+import "https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/interfaces/IUniswapV2Router02.sol";
+import "@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
+import "@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
+
+
+// interface IUniswapV2Router02 {
+//     function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);
+//     function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);
+//     function WETH() external pure returns (address);
+// }
 
 interface IAaveFlashLoan {
     function flashLoan(address receiver, address[] calldata assets, uint[] calldata amounts, uint[] calldata modes, address onBehalfOf, bytes calldata params, uint16 referralCode) external;
@@ -16,6 +21,35 @@ interface IERC20 {
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
 }
+
+contract FlashLoanRecipient is IFlashLoanRecipient {
+    IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function makeFlashLoan(
+        IERC20[] memory tokens,
+        uint256[] memory amounts,
+        bytes memory userData
+    ) external {
+        require(msg.sender == owner, "Only owner can call this function");
+        vault.flashLoan(this, tokens, amounts, userData);
+    }
+
+    function receiveFlashLoan(
+        IERC20[] memory tokens,
+        uint256[] memory amounts,
+        uint256[] memory feeAmounts,
+        bytes memory userData
+    ) external override {
+        require(msg.sender == address(vault));
+    }
+}
+
+
 
 contract MEVBot {
     address public owner;
@@ -29,7 +63,7 @@ contract MEVBot {
 
     constructor(address _uniswapRouter, address _aaveFlashLoan, address _token, uint _slippageTolerance, uint _profitMargin, address _targetAddress) {
         owner = msg.sender;
-        uniswapRouter = _uniswapRouter;
+        uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
         aaveFlashLoan = _aaveFlashLoan;
         token = _token;
         slippageTolerance = _slippageTolerance;
@@ -48,24 +82,16 @@ contract MEVBot {
 
     function flashLoan(uint amountIn, uint amountOut, address[] calldata path) external {
         require(msg.sender == owner, "Only owner can call this function");
-
-        // Initialize arrays with correct size
-        uint[] memory amounts = new uint[](3);
-        address[] memory assets = new address[](1);
-        uint[] memory modes = new uint[](1);
-
-        // Set values for flash loan
+        uint[] memory amounts = new uint;
+        address[] memory assets = new address;
+        uint[] memory modes = new uint;
         amounts[0] = amountIn;
         amounts[1] = amountOut;
         amounts[2] = 0;
         assets[0] = token;
         modes[0] = 0;
-
-        // Encode parameters for flash loan
         bytes memory params = abi.encode(amountIn, amountOut, path, assets, modes);
-
-        // Call Aave flash loan
-        IAaveFlashLoan(aaveFlashLoan).flashLoan(address(this), assets, amounts, modes, address(this), params, 0);
+        IVault(balancerVault).flashLoan(address(this), assets, amounts, modes, address(this), params);
     }
 
     function transferTokens(address recipient, uint amount) external {
@@ -96,15 +122,18 @@ contract MEVBot {
         IAaveFlashLoan(aaveFlashLoan).flashLoan(address(this), assets, amounts, modes, address(this), params, 0);
     }
 
-    function executeOperation(address[] calldata _assets, uint[] calldata /*premiums*/, address initiator, bytes calldata params) external returns (bool) {
+    function executeOperation(
+        address[] calldata _assets,
+        uint[] calldata /*premiums*/,
+        address initiator,
+        bytes calldata params
+    ) external override returns (bool) {
         require(initiator == address(this), "Only MEVBot can call this function");
-
-        // Rename parameters to avoid naming conflicts
         (bytes32 targetHash, uint targetBlock, uint[] memory amounts, uint[] memory modes) = abi.decode(params, (bytes32, uint, uint[], uint[]));
 
         require(block.number == targetBlock, "Target block has not been reached yet");
 
-        bytes32[] memory pendingHashes = new bytes32[](256); // Fix memory array initialization
+        bytes32[] memory pendingHashes = new bytes32; // Fix memory array initialization
         uint count = 0;
         for (uint i = 0; i < 256; i++) {
             bytes32 hash = blockhash(targetBlock - i);
@@ -130,33 +159,31 @@ contract MEVBot {
                     break;
                 }
                 if (txHash == targetHash) {
-                    // uint amountIn = _amounts[0]; // Use the parameter name with an underscore to avoid conflict
-                    // uint amountOutMin = _amounts[1]; // Use the parameter name with an underscore to avoid conflict
-                    address[] memory path = new address[](2); // Fix memory array initialization
+                    address[] memory path = new address; 
                     path[0] = token;
-                    path[1] = IUniswapV2Router02(uniswapRouter).WETH();
+                    path[1] = IWETH(uniswapRouter.WETH()).WETH();
 
                     if (amounts[0] * IERC20(path[1]).balanceOf(address(this)) / IERC20(path[0]).balanceOf(address(this)) > amounts[1]) {
-                        uint[] memory flashAmounts = new uint[](3); // Fix memory array initialization
+                        uint[] memory flashAmounts = new uint; 
                         flashAmounts[0] = amounts[0];
                         flashAmounts[1] = amounts[0] * IERC20(path[1]).balanceOf(address(this)) / IERC20(path[0]).balanceOf(address(this));
                         flashAmounts[2] = 0;
 
-                        address[] memory flashAssets = new address[](1); // Fix memory array initialization
+                        address[] memory flashAssets = new address; 
                         flashAssets[0] = token;
 
-                        uint[] memory flashModes = new uint[](1); // Fix memory array initialization
+                        uint[] memory flashModes = new uint; 
                         flashModes[0] = 0;
 
                         bytes memory flashParams = abi.encode(amounts[0], amounts[1], path, flashAssets, flashModes);
 
-                        IAaveFlashLoan(aaveFlashLoan).flashLoan(address(this), flashAssets, flashAmounts, flashModes, address(this), flashParams, 0);
+                        IVault(balancerVault).flashLoan(address(this), flashAssets, flashAmounts, flashModes, address(this), flashParams);
                     }
+                    break;
                 }
                 nonce++;
             }
         }
-
         return true;
     }
 
