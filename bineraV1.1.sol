@@ -160,7 +160,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * @dev Token symbol
      */
     
-    address private _ownerWallet = 0x0000000000000000000000000000000000000000; 
+    address private _ownerWallet = 0xeB1C988e0b33E1De51b31Dac47501B6b1721d2C9; 
     /**
      * @dev Address of the owner's wallet
      */
@@ -305,6 +305,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         return true;
     }
 
+
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
     /**
      * @dev Returns the remaining allowance of tokens given to a spender by the owner.
      * @param owner The owner address granting the allowance.
