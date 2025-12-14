@@ -1,19 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-/*
-
-██████╗░ ██╗ ███╗░░██╗ ███████╗ ░█████╗░
-██╔══██╗ ██║ ████╗░██║ ██╔════╝ ██╔══██╗
-██████╦╝ ██║ ██╔██╗██║ █████╗░░ ███████║
-██╔══██╗ ██║ ██║╚████║ ██╔══╝░░ ██╔══██║
-██████╦╝ ██║ ██║░╚███║ ███████╗ ██║░░██║
-╚═════╝░ ╚═╝ ╚═╝░░╚══╝ ╚══════╝ ╚═╝░░╚═╝
-
-Telegram: https://t.me/BineraEN/
-Twitter: https://twitter.com/BineraEN/
-Website: https://Binera.finance/
-*/
-
 pragma solidity 0.8.19;
 
 interface IERC20 {

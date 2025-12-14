@@ -27,7 +27,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient {
 
         // Swap the flash loaned tokens for another token on Uniswap
         address tokenToSwap = address(tokens[0]);
-        address tokenToReceive = address(0xTokenToReceiveAddress);
+        address tokenToReceive = address(0);
         uint256 amountToSwap = amounts[0];
         uint256 amountOutMin = 0; // Minimum amount of tokens to receive, set this based on your slippage tolerance
 
